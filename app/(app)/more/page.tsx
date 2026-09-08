@@ -18,8 +18,8 @@ export default function MorePage() {
   ];
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-4">
-      <h1 className="text-lg font-semibold">More</h1>
+    <div className="fade-up flex flex-col gap-4 px-4 py-4">
+      <h1 className="gold-gradient font-display text-xl font-semibold tracking-wide">More</h1>
       <div className="flex flex-col gap-2">
         {items.map((item) => (
           <Link key={item.href} href={item.href}>

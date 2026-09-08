@@ -32,9 +32,9 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const deadlinePassed = new Date() > match.rsvpDeadline;
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-4">
+    <div className="fade-up flex flex-col gap-4 px-4 py-4">
       <div>
-        <h1 className="text-lg font-semibold">{match.title}</h1>
+        <h1 className="gold-gradient font-display text-xl font-semibold tracking-wide">{match.title}</h1>
         <p className="text-sm text-muted-foreground">
           {match.matchDate.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
           {" · "}

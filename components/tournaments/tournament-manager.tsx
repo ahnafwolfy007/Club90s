@@ -89,7 +89,7 @@ export function TournamentManager({
 
   return (
     <div className="flex flex-col gap-4">
-      {error && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
+      {error && <p className="rounded-lg border border-danger/25 bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
 
       <Card>
         <p className="mb-2 text-sm font-medium">Player pool ({pool.length})</p>
@@ -133,7 +133,7 @@ export function TournamentManager({
         </div>
         <form onSubmit={addTeam} className="flex flex-col gap-2">
           <Input placeholder="Team name" value={teamName} onChange={(e) => setTeamName(e.target.value)} required />
-          <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)} className="rounded-lg border border-border bg-card px-3 py-2.5 text-base">
+          <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)} className="rounded-lg border border-border bg-surface px-3 py-2.5 text-base text-foreground outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/25">
             {members.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.fullName}

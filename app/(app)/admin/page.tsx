@@ -13,7 +13,7 @@ const SECTIONS = [
 export default function AdminHomePage() {
   return (
     <>
-      <h1 className="text-lg font-semibold">Admin console</h1>
+      <h1 className="gold-gradient font-display text-xl font-semibold tracking-wide">Admin console</h1>
       <div className="flex flex-col gap-3">
         {SECTIONS.map((s) => (
           <Link key={s.href} href={s.href}>

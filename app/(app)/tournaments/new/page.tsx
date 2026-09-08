@@ -10,8 +10,8 @@ export default async function NewTournamentPage() {
   if (!ctx || !tournamentSectorId || !can.manageTournament(ctx, tournamentSectorId)) redirect("/tournaments");
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-4">
-      <h1 className="text-lg font-semibold">New tournament</h1>
+    <div className="fade-up flex flex-col gap-4 px-4 py-4">
+      <h1 className="gold-gradient font-display text-xl font-semibold tracking-wide">New tournament</h1>
       <TournamentForm />
     </div>
   );

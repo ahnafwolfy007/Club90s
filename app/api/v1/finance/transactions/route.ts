@@ -5,6 +5,8 @@ import { can } from "@/lib/permissions/can";
 import { getSectorIdByName, WELL_KNOWN_SECTORS } from "@/lib/db/sectors";
 import { createTransactionSchema } from "@/lib/validation/finance";
 import { notifyMember } from "@/lib/notifications/create";
+import { sendEmail } from "@/lib/email/send";
+import { paymentReceiptEmail } from "@/lib/email/templates";
 import { Errors, handleApiError, ApiError } from "@/lib/api/errors";
 
 export async function GET(request: NextRequest) {
@@ -77,6 +79,15 @@ export async function POST(request: NextRequest) {
 
     if (body.memberId) {
       await notifyMember(body.memberId, "payment_recorded", { amount: body.amount, category: category.name });
+
+      const payer = await prisma.member.findUnique({
+        where: { id: body.memberId },
+        include: { user: { select: { email: true, status: true } } },
+      });
+      if (payer && payer.user.status === "active") {
+        const receipt = paymentReceiptEmail(payer.fullName, String(body.amount), category.name, body.feeMonth);
+        await sendEmail(payer.user.email, receipt.subject, receipt.text, receipt.html);
+      }
     }
 
     return NextResponse.json({ transaction });

@@ -1,32 +1,49 @@
 @import "tailwindcss";
 
+/*
+ * CLUB 90s — gold on black.
+ * Palette carried over from the club's existing finance dashboard so the app
+ * and that board read as one product. Single dark theme by design (no light
+ * variant): the club's identity is gold-on-black, and a washed-out light mode
+ * would fight it.
+ */
 :root {
-  --background: #f7f8f6;
-  --foreground: #141813;
-  --card: #ffffff;
-  --card-foreground: #141813;
-  --muted: #eef1ec;
-  --muted-foreground: #5b665a;
-  --border: #dfe4db;
-  --primary: #1c7a3e;
-  --primary-foreground: #ffffff;
-  --accent: #e8f3ec;
-  --danger: #c4362f;
-  --danger-foreground: #ffffff;
-  --warning: #b6790a;
-  --success: #1c7a3e;
-  --ring: #1c7a3e;
+  --background: #0a0a0a;
+  --surface: #111111;
+  --card: #161616;
+  --card-foreground: #f5f0e8;
+  --foreground: #f5f0e8;
+  --muted: #1c1c1c;
+  --muted-foreground: #a89070;
+  --border: #262626;
+  --border-gold: rgba(201, 168, 76, 0.18);
+  --primary: #c9a84c;
+  --primary-light: #e8c96d;
+  --primary-bright: #ffd700;
+  --primary-dim: #8b6914;
+  --primary-foreground: #0a0a0a;
+  --accent: rgba(201, 168, 76, 0.1);
+  --danger: #e74c3c;
+  --danger-foreground: #0a0a0a;
+  --warning: #e0a437;
+  --success: #2ecc71;
+  --ring: #c9a84c;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
+  --color-border-gold: var(--border-gold);
   --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
+  --color-primary-bright: var(--primary-bright);
+  --color-primary-dim: var(--primary-dim);
   --color-primary-foreground: var(--primary-foreground);
   --color-accent: var(--accent);
   --color-danger: var(--danger);
@@ -34,50 +51,14 @@
   --color-warning: var(--warning);
   --color-success: var(--success);
   --color-ring: var(--ring);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-cinzel);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --background: #0f1310;
-    --foreground: #ecf1ea;
-    --card: #171c17;
-    --card-foreground: #ecf1ea;
-    --muted: #1e241d;
-    --muted-foreground: #99a696;
-    --border: #2a322a;
-    --primary: #3fae6a;
-    --primary-foreground: #04140a;
-    --accent: #16261c;
-    --danger: #e5675f;
-    --danger-foreground: #1a0605;
-    --warning: #e0a437;
-    --success: #3fae6a;
-    --ring: #3fae6a;
-  }
-}
-
-:root[data-theme="dark"] {
-  --background: #0f1310;
-  --foreground: #ecf1ea;
-  --card: #171c17;
-  --card-foreground: #ecf1ea;
-  --muted: #1e241d;
-  --muted-foreground: #99a696;
-  --border: #2a322a;
-  --primary: #3fae6a;
-  --primary-foreground: #04140a;
-  --accent: #16261c;
-  --danger: #e5675f;
-  --danger-foreground: #1a0605;
-  --warning: #e0a437;
-  --success: #3fae6a;
-  --ring: #3fae6a;
 }
 
 html {
   overscroll-behavior-y: none;
+  color-scheme: dark;
 }
 
 body {
@@ -85,8 +66,96 @@ body {
   color: var(--foreground);
 }
 
+/* Gold gradient wordmark treatment, matching the finance dashboard's titles. */
+.gold-gradient {
+  background: linear-gradient(135deg, var(--primary-light), var(--primary), var(--primary-dim));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Hairline gold accent along the top edge of a card. */
+.gold-topline {
+  position: relative;
+  overflow: hidden;
+}
+.gold-topline::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+}
+
+/* Numeric columns line up when digits share a width. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--primary-dim);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
 @media (prefers-reduced-motion: no-preference) {
   [data-scroll-behavior="smooth"] {
     scroll-behavior: smooth;
+  }
+}
+
+/* Route transitions: content fades up rather than snapping in. */
+@media (prefers-reduced-motion: no-preference) {
+  .fade-up {
+    animation: fadeUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Skeleton placeholder with a gold sheen sweeping across it. */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--muted);
+  border-radius: 0.5rem;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(201, 168, 76, 0.08), transparent);
+  animation: shimmer 1.4s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
   }
 }

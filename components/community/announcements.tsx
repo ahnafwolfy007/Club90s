@@ -50,7 +50,7 @@ export function Announcements({ canPublish }: { canPublish: boolean }) {
           <p className="mb-2 text-sm font-medium">New announcement</p>
           <form onSubmit={submit} className="flex flex-col gap-2">
             <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
-            <select value={type} onChange={(e) => setType(e.target.value)} className="rounded-lg border border-border bg-card px-3 py-2.5 text-base">
+            <select value={type} onChange={(e) => setType(e.target.value)} className="rounded-lg border border-border bg-surface px-3 py-2.5 text-base text-foreground outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/25">
               {["General", "Match", "Tournament", "Finance", "Urgent", "Event"].map((t) => (
                 <option key={t} value={t}>
                   {t}
@@ -62,7 +62,7 @@ export function Announcements({ canPublish }: { canPublish: boolean }) {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Details…"
               rows={3}
-              className="rounded-lg border border-border bg-card px-3 py-2.5 text-base"
+              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-base text-foreground outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/25"
               required
             />
             <Button type="submit" disabled={loading}>

@@ -10,7 +10,7 @@ export default async function AdminElectionsPage() {
 
   return (
     <>
-      <h1 className="text-lg font-semibold">Elections</h1>
+      <h1 className="gold-gradient font-display text-xl font-semibold tracking-wide">Elections</h1>
       <ElectionManager
         members={members}
         sectors={sectors.map((s) => ({ id: s.id, name: s.name }))}

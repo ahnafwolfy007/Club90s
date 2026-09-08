@@ -57,7 +57,7 @@ export function InstallPrompt() {
   }
 
   return (
-    <div className="fixed inset-x-3 bottom-3 z-50 flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-lg sm:left-auto sm:right-4 sm:w-80">
+    <div className="fixed inset-x-3 bottom-3 z-50 flex items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3 shadow-lg sm:left-auto sm:right-4 sm:w-80">
       <p className="text-sm text-card-foreground">Install CLUB 90s for quicker access.</p>
       <div className="flex shrink-0 gap-2">
         <button onClick={dismiss} className="rounded-md px-2 py-1 text-sm text-muted-foreground">

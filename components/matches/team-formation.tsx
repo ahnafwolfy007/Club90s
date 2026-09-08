@@ -110,7 +110,7 @@ export function TeamFormation({
       </div>
 
       {teams.map((t, i) => (
-        <div key={i} className="rounded-xl border border-border bg-card p-3">
+        <div key={i} className="rounded-xl border border-border bg-surface p-3">
           <p className="mb-2 text-sm font-semibold">{t.name}</p>
           {t.memberIds.length === 0 ? (
             <p className="text-sm text-muted-foreground">No players yet.</p>
@@ -153,7 +153,7 @@ export function TeamFormation({
         </div>
       </div>
 
-      {error && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
+      {error && <p className="rounded-lg border border-danger/25 bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
       <div className="flex gap-2">
         <Button variant="secondary" onClick={() => save("draft")} disabled={loading !== null}>
           {loading === "draft" ? "Saving…" : "Save draft"}

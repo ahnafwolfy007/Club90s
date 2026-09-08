@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/db/client";
@@ -41,15 +42,19 @@ async function loadAuthContext(userId: string): Promise<AuthContext | null> {
   };
 }
 
-/** For Server Components, layouts, and Server Actions (reads the cookie via next/headers). */
-export async function getCurrentUser(): Promise<AuthContext | null> {
+/**
+ * For Server Components, layouts, and Server Actions (reads the cookie via
+ * next/headers). Wrapped in React `cache` so a layout and the page inside it
+ * share one session lookup per request instead of each paying a DB round trip.
+ */
+export const getCurrentUser = cache(async function getCurrentUser(): Promise<AuthContext | null> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
   const userId = await validateSessionToken(token);
   if (!userId) return null;
   return loadAuthContext(userId);
-}
+});
 
 /** For Route Handlers, which receive the request's cookies synchronously. */
 export async function getCurrentUserFromRequest(request: NextRequest): Promise<AuthContext | null> {

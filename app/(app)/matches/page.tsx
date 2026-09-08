@@ -18,9 +18,9 @@ export default async function MatchesPage() {
   });
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-4">
+    <div className="fade-up flex flex-col gap-4 px-4 py-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Matches</h1>
+        <h1 className="gold-gradient font-display text-xl font-semibold tracking-wide">Matches</h1>
         {canCreate && (
           <Link href="/matches/new" className="text-sm font-medium text-primary">
             + New match

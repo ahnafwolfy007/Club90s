@@ -18,8 +18,8 @@ export default async function EditMatchPage({ params }: { params: Promise<{ id: 
   const d = match.startTime;
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-4">
-      <h1 className="text-lg font-semibold">Edit match</h1>
+    <div className="fade-up flex flex-col gap-4 px-4 py-4">
+      <h1 className="gold-gradient font-display text-xl font-semibold tracking-wide">Edit match</h1>
       <MatchForm
         initial={{
           id: match.id,

@@ -45,7 +45,7 @@ export function LoginForm({ next }: { next: string }) {
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="rounded-lg border border-border bg-card px-3 py-2.5 text-base text-card-foreground outline-none focus:ring-2 focus:ring-ring"
+          className="rounded-lg border border-border bg-surface px-3 py-2.5 text-base text-foreground outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/25"
         />
       </div>
       <div className="flex flex-col gap-1.5">
@@ -59,11 +59,11 @@ export function LoginForm({ next }: { next: string }) {
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="rounded-lg border border-border bg-card px-3 py-2.5 text-base text-card-foreground outline-none focus:ring-2 focus:ring-ring"
+          className="rounded-lg border border-border bg-surface px-3 py-2.5 text-base text-foreground outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/25"
         />
       </div>
       {error && (
-        <p role="alert" className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
+        <p role="alert" className="rounded-lg border border-danger/25 bg-danger/10 px-3 py-2 text-sm text-danger">
           {error}
         </p>
       )}

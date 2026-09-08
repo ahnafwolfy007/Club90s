@@ -9,7 +9,7 @@ export default async function AdminAuditLogsPage() {
 
   return (
     <>
-      <h1 className="text-lg font-semibold">Audit log</h1>
+      <h1 className="gold-gradient font-display text-xl font-semibold tracking-wide">Audit log</h1>
       <div className="flex flex-col gap-2">
         {logs.map((log) => (
           <div key={log.id} className="rounded-xl border border-border bg-card p-3 text-sm">

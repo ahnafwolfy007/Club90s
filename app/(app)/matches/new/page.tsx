@@ -10,8 +10,8 @@ export default async function NewMatchPage() {
   if (!ctx || !clubTeamSectorId || !can.manageMatches(ctx, clubTeamSectorId)) redirect("/matches");
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-4">
-      <h1 className="text-lg font-semibold">New match</h1>
+    <div className="fade-up flex flex-col gap-4 px-4 py-4">
+      <h1 className="gold-gradient font-display text-xl font-semibold tracking-wide">New match</h1>
       <MatchForm />
     </div>
   );

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useCurrentUser } from "@/lib/auth/current-user-context";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { Logo } from "@/components/ui/logo";
 
 export function AppHeader() {
   const user = useCurrentUser();
@@ -22,12 +23,19 @@ export function AppHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-card px-4 py-3">
-      <span className="text-sm font-semibold">CLUB 90s</span>
+    <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border-gold bg-background/92 px-4 py-2.5 backdrop-blur-xl">
+      <div className="flex items-center gap-2.5">
+        <Logo size={26} className="shrink-0" />
+        <span className="gold-gradient font-display text-base font-bold tracking-wide">CLUB 90s</span>
+      </div>
       <div className="flex items-center gap-3">
         <NotificationBell />
-        <span className="text-sm text-muted-foreground">{user.fullName}</span>
-        <button onClick={logout} disabled={loading} className="text-sm font-medium text-primary disabled:opacity-60">
+        <span className="hidden text-sm text-muted-foreground sm:inline">{user.fullName}</span>
+        <button
+          onClick={logout}
+          disabled={loading}
+          className="text-sm font-medium text-primary transition-colors hover:text-primary-light disabled:opacity-60"
+        >
           {loading ? "…" : "Log out"}
         </button>
       </div>

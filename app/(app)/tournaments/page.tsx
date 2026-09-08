@@ -13,9 +13,9 @@ export default async function TournamentsPage() {
   const tournaments = await prisma.tournament.findMany({ orderBy: { startDate: "desc" } });
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-4">
+    <div className="fade-up flex flex-col gap-4 px-4 py-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Tournaments</h1>
+        <h1 className="gold-gradient font-display text-xl font-semibold tracking-wide">Tournaments</h1>
         {canCreate && (
           <Link href="/tournaments/new" className="text-sm font-medium text-primary">
             + New

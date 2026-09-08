@@ -15,8 +15,8 @@ export default async function ProfilePage() {
   if (!member) redirect("/login");
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-4">
-      <h1 className="text-lg font-semibold">My profile</h1>
+    <div className="fade-up flex flex-col gap-4 px-4 py-4">
+      <h1 className="gold-gradient font-display text-xl font-semibold tracking-wide">My profile</h1>
       <ProfileForm
         member={{
           id: member.id,

@@ -4,10 +4,14 @@ Mobile-first PWA for a private football club: membership, match RSVP & team
 formation, finance, tournament player bidding, anonymous president elections,
 and a lightweight community feed. Built from `CLUB90s_SRS_TDD.md`.
 
+**Look:** gold on black, carried over from the club's existing finance
+dashboard — single dark theme by design, with the crest always rendered on a
+white plate so it never disappears into the background.
+
 **Stack:** Next.js 16 (App Router, Turbopack) + TypeScript + Tailwind CSS 4,
 Prisma 7 (`@prisma/adapter-mariadb` driver adapter) on MySQL (Aiven), session
-auth with argon2id, Resend for email, Cloudflare R2 for file storage (not yet
-provisioned).
+auth with argon2id, Nodemailer over Gmail SMTP for email, Cloudflare R2 for
+file storage (not yet provisioned).
 
 ## Setup
 
@@ -33,8 +37,11 @@ See `.env.example` for the full list. Notable ones:
 - `SESSION_SECRET` — not currently used for cookie signing (sessions are opaque
   random tokens, hashed server-side — see `lib/auth/session.ts`), reserved for
   future use.
-- `RESEND_API_KEY` / `EMAIL_FROM` — leave `RESEND_API_KEY` blank in dev; emails
-  (activation links) log to the server console instead of sending.
+- `GMAIL_USER` / `GMAIL_APP_PASSWORD` / `EMAIL_FROM` — Gmail SMTP. Requires
+  2-Step Verification on the account plus an App Password
+  (myaccount.google.com/apppasswords); a normal account password will not
+  authenticate. Leave blank in dev — emails then log to the server console
+  instead of sending.
 - `R2_*` — not yet wired into any upload code path (profile photos,
   achievement images, receipts are schema-ready via `*ImageUrl`/`attachmentUrl`
   columns, but the direct-to-object-storage upload flow from SRS §25.5 isn't
@@ -74,7 +81,7 @@ community feed + comments + reactions + moderation, achievements,
 announcements, birthdays (day/month only), in-app notifications, PWA
 manifest/icons/service worker.
 
-**Not yet built:** recruitment application workflow (§12.3), CSRF token
+**Not yet built:** CSRF token
 defense-in-depth (§28 — currently relying on SameSite=Lax only), historical
 finance migration UI (member import exists; finance-specific import per §17.4
 doesn't), object storage upload flow (§25.5), Web Push (correctly deferred to

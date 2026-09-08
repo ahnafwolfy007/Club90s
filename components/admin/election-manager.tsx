@@ -108,7 +108,7 @@ export function ElectionManager({
       <Card>
         <p className="mb-3 text-sm font-medium">New election</p>
         <form onSubmit={createElection} className="flex flex-col gap-3">
-          <select value={sectorId} onChange={(e) => setSectorId(e.target.value)} className="rounded-lg border border-border bg-card px-3 py-2.5 text-base">
+          <select value={sectorId} onChange={(e) => setSectorId(e.target.value)} className="rounded-lg border border-border bg-surface px-3 py-2.5 text-base text-foreground outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/25">
             {sectors.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
@@ -149,7 +149,7 @@ export function ElectionManager({
             </div>
           </div>
 
-          {error && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
+          {error && <p className="rounded-lg border border-danger/25 bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
           <Button type="submit" disabled={loading}>
             {loading ? "Creating…" : "Create election"}
           </Button>

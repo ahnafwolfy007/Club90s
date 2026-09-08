@@ -75,7 +75,7 @@ export function RecordPaymentForm({ categories }: { categories: Category[] }) {
       <div className="flex flex-col gap-1.5">
         <span className="text-sm font-medium text-muted-foreground">Member (optional — leave blank for club-level income/expense)</span>
         {member ? (
-          <div className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2.5">
+          <div className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2.5">
             <span>{member.fullName}</span>
             <button type="button" onClick={() => setMember(null)} className="text-sm text-primary">
               Change
@@ -95,7 +95,7 @@ export function RecordPaymentForm({ categories }: { categories: Category[] }) {
                       setQ("");
                       setOptions([]);
                     }}
-                    className="border-b border-border bg-card px-3 py-2 text-left text-sm last:border-b-0 active:bg-muted"
+                    className="border-b border-border bg-surface px-3 py-2 text-left text-sm last:border-b-0 active:bg-muted"
                   >
                     {o.fullName}
                   </button>
@@ -111,7 +111,7 @@ export function RecordPaymentForm({ categories }: { categories: Category[] }) {
         <select
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
-          className="rounded-lg border border-border bg-card px-3 py-2.5 text-base"
+          className="rounded-lg border border-border bg-surface px-3 py-2.5 text-base text-foreground outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/25"
         >
           {categories.map((c) => (
             <option key={c.id} value={c.id}>
@@ -163,7 +163,7 @@ export function RecordPaymentForm({ categories }: { categories: Category[] }) {
 
       <Input placeholder="Notes (optional)" value={description} onChange={(e) => setDescription(e.target.value)} />
 
-      {error && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
+      {error && <p className="rounded-lg border border-danger/25 bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
       {saved && <p className="text-sm text-success">Saved.</p>}
       <Button type="submit" disabled={loading || !amount}>
         {loading ? "Saving…" : "Save transaction"}

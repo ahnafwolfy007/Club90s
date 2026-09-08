@@ -1,4 +1,4 @@
-import { Card } from "@/components/ui/card";
+import { Card, CardLabel } from "@/components/ui/card";
 import type { FeeStatus } from "@/lib/finance/fee-status";
 
 type Transaction = {
@@ -8,6 +8,7 @@ type Transaction = {
   description: string | null;
   createdAt: string;
   status: string;
+  feeMonth: string | null;
   category: { name: string };
 };
 
@@ -27,11 +28,12 @@ export function MyPayments({
 }) {
   return (
     <div className="flex flex-col gap-4">
-      <Card>
-        <p className="text-sm text-muted-foreground">This month</p>
-        <div className="mt-1 flex items-center justify-between">
-          <p className="text-lg font-semibold">
-            {feeStatus.amountPaid} / {feeStatus.amountDue}
+      <Card accent>
+        <CardLabel>Dues this month</CardLabel>
+        <div className="mt-1.5 flex items-center justify-between">
+          <p className="tabular text-2xl font-semibold text-primary-light">
+            {feeStatus.amountPaid.toLocaleString()}
+            <span className="text-base text-muted-foreground"> / {feeStatus.amountDue.toLocaleString()}</span>
           </p>
           <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[feeStatus.status]}`}>
             {feeStatus.status}
@@ -40,22 +42,35 @@ export function MyPayments({
       </Card>
 
       <div>
-        <p className="mb-2 text-sm font-medium">History</p>
+        <p className="mb-2 font-display text-xs uppercase tracking-[0.12em] text-primary-dim">Payment history</p>
         {transactions.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No transactions yet.</p>
+          <p className="text-sm text-muted-foreground">Nothing recorded yet.</p>
         ) : (
           <div className="flex flex-col gap-2">
             {transactions.map((t) => (
               <Card key={t.id} className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium">{t.category.name}</p>
+                  <p className="text-sm font-medium">
+                    {t.category.name}
+                    {t.feeMonth ? ` · ${t.feeMonth}` : ""}
+                  </p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(t.createdAt).toLocaleDateString()} {t.description ? `· ${t.description}` : ""}
+                    {new Date(t.createdAt).toLocaleDateString()}
+                    {t.description ? ` · ${t.description}` : ""}
+                    {t.status === "voided" ? " · voided" : ""}
                   </p>
                 </div>
-                <span className={`text-sm font-medium ${t.status === "voided" ? "text-muted-foreground line-through" : ""}`}>
-                  {t.type === "expense" ? "-" : "+"}
-                  {t.amount}
+                <span
+                  className={`tabular text-sm font-semibold ${
+                    t.status === "voided"
+                      ? "text-muted-foreground line-through"
+                      : t.type === "expense"
+                        ? "text-danger"
+                        : "text-success"
+                  }`}
+                >
+                  {t.type === "expense" ? "−" : "+"}
+                  {Number(t.amount).toLocaleString()}
                 </span>
               </Card>
             ))}

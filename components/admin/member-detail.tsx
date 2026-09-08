@@ -121,7 +121,7 @@ export function MemberDetail({ member, sectors }: { member: MemberDetailData; se
           <select
             value={role}
             onChange={(e) => setRole(e.target.value as RoleName)}
-            className="rounded-lg border border-border bg-card px-3 py-2.5 text-base"
+            className="rounded-lg border border-border bg-surface px-3 py-2.5 text-base text-foreground outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/25"
           >
             {ROLE_OPTIONS.map((r) => (
               <option key={r} value={r}>
@@ -133,7 +133,7 @@ export function MemberDetail({ member, sectors }: { member: MemberDetailData; se
             <select
               value={sectorId}
               onChange={(e) => setSectorId(e.target.value)}
-              className="rounded-lg border border-border bg-card px-3 py-2.5 text-base"
+              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-base text-foreground outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/25"
             >
               {sectors.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -149,7 +149,7 @@ export function MemberDetail({ member, sectors }: { member: MemberDetailData; se
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          {error && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
+          {error && <p className="rounded-lg border border-danger/25 bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
           <Button type="submit" disabled={loading}>
             {loading ? "Assigning…" : "Assign role"}
           </Button>

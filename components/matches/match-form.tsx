@@ -87,7 +87,7 @@ export function MatchForm({ initial }: { initial?: MatchFormInitial }) {
       <Field label="RSVP deadline">
         <Input type="datetime-local" value={rsvpDeadline} onChange={(e) => setRsvpDeadline(e.target.value)} required />
       </Field>
-      {error && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
+      {error && <p className="rounded-lg border border-danger/25 bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
       <Button type="submit" disabled={loading}>
         {loading ? "Saving…" : initial ? "Save changes" : "Create match"}
       </Button>

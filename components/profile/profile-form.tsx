@@ -85,7 +85,7 @@ export function ProfileForm({ member }: { member: MemberDetail }) {
       <Field label="Emergency contact (optional, admin-only visibility)">
         <Input value={emergencyContact} onChange={(e) => setEmergencyContact(e.target.value)} />
       </Field>
-      {error && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
+      {error && <p className="rounded-lg border border-danger/25 bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
       {saved && <p className="text-sm text-success">Saved.</p>}
       <Button type="submit" disabled={loading}>
         {loading ? "Saving…" : "Save changes"}

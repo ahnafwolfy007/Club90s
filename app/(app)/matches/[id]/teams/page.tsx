@@ -24,8 +24,8 @@ export default async function MatchTeamsPage({ params }: { params: Promise<{ id:
   ]);
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-4">
-      <h1 className="text-lg font-semibold">Form teams — {match.title}</h1>
+    <div className="fade-up flex flex-col gap-4 px-4 py-4">
+      <h1 className="gold-gradient font-display text-xl font-semibold tracking-wide">Form teams — {match.title}</h1>
       <TeamFormation
         matchId={id}
         players={rsvps.map((r) => r.member)}

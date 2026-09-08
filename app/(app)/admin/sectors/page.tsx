@@ -6,7 +6,7 @@ export default async function AdminSectorsPage() {
 
   return (
     <>
-      <h1 className="text-lg font-semibold">Sectors</h1>
+      <h1 className="gold-gradient font-display text-xl font-semibold tracking-wide">Sectors</h1>
       <SectorManager sectors={sectors} />
     </>
   );

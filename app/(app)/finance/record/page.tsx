@@ -13,8 +13,8 @@ export default async function RecordPaymentPage() {
   const categories = await prisma.financeCategory.findMany({ where: { isActive: true }, orderBy: { name: "asc" } });
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-4">
-      <h1 className="text-lg font-semibold">Record a payment</h1>
+    <div className="fade-up flex flex-col gap-4 px-4 py-4">
+      <h1 className="gold-gradient font-display text-xl font-semibold tracking-wide">Record a payment</h1>
       <RecordPaymentForm categories={categories} />
     </div>
   );

@@ -24,7 +24,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const token = await issueActivationToken(member.user.id);
     const activationUrl = `${process.env.APP_URL}/activate?token=${token}`;
     const email = activationEmail(member.fullName, activationUrl);
-    await sendEmail(member.user.email, email.subject, email.text);
+    await sendEmail(member.user.email, email.subject, email.text, email.html);
 
     await recordAudit({
       actorId: ctx.userId,

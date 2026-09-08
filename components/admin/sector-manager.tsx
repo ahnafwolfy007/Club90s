@@ -51,7 +51,7 @@ export function SectorManager({ sectors }: { sectors: Sector[] }) {
         <form onSubmit={onSubmit} className="flex flex-col gap-3">
           <Input placeholder="Name (e.g. Merchandise)" value={name} onChange={(e) => setName(e.target.value)} required />
           <Input placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} />
-          {error && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
+          {error && <p className="rounded-lg border border-danger/25 bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
           <Button type="submit" disabled={loading}>
             {loading ? "Creating…" : "Create sector"}
           </Button>

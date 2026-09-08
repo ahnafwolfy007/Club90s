@@ -66,7 +66,7 @@ export function TournamentForm() {
       <Field label="Bid increment">
         <Input type="number" min={1} value={bidIncrement} onChange={(e) => setBidIncrement(e.target.value)} />
       </Field>
-      {error && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
+      {error && <p className="rounded-lg border border-danger/25 bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
       <Button type="submit" disabled={loading}>
         {loading ? "Creating…" : "Create tournament"}
       </Button>

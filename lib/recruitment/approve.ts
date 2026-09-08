@@ -32,7 +32,7 @@ export async function approveRecruitment(applicationId: string, email: string, r
   const token = await issueActivationToken(user.id);
   const activationUrl = `${process.env.APP_URL}/activate?token=${token}`;
   const email_ = activationEmail(application.fullName, activationUrl);
-  await sendEmail(user.email, email_.subject, email_.text);
+  await sendEmail(user.email, email_.subject, email_.text, email_.html);
 
   return { user, member };
 }

@@ -10,8 +10,8 @@ export default async function CommunityPage() {
   const canPublish = ctx ? can.isAdmin(ctx) || (commsSectorId ? can.isPresidentOfSector(ctx, commsSectorId) : false) : false;
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-4">
-      <h1 className="text-lg font-semibold">Community</h1>
+    <div className="fade-up flex flex-col gap-4 px-4 py-4">
+      <h1 className="gold-gradient font-display text-xl font-semibold tracking-wide">Community</h1>
       <CommunityTabs canModerate={canModerate} canPublish={canPublish} />
     </div>
   );

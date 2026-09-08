@@ -26,9 +26,9 @@ export default async function TournamentDetailPage({ params }: { params: Promise
   const members = await prisma.member.findMany({ where: { status: "active" }, select: { id: true, fullName: true }, orderBy: { fullName: "asc" } });
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-4">
+    <div className="fade-up flex flex-col gap-4 px-4 py-4">
       <div>
-        <h1 className="text-lg font-semibold">{tournament.name}</h1>
+        <h1 className="gold-gradient font-display text-xl font-semibold tracking-wide">{tournament.name}</h1>
         <p className="text-sm text-muted-foreground">
           {tournament.format} · {tournament.startDate.toLocaleDateString()} · {tournament.status}
         </p>

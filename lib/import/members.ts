@@ -94,7 +94,7 @@ export async function runMemberImport(params: {
       const token = await issueActivationToken(user.id);
       const activationUrl = `${process.env.APP_URL}/activate?token=${token}`;
       const email_ = activationEmail(fullName, activationUrl);
-      await sendEmail(user.email, email_.subject, email_.text);
+      await sendEmail(user.email, email_.subject, email_.text, email_.html);
 
       results.push({ row: rowNumber, outcome: "imported", email });
     } catch (err) {

@@ -78,7 +78,7 @@ export function Feed({ canModerate }: { canModerate: boolean }) {
           onChange={(e) => setContent(e.target.value)}
           placeholder="Share something with the club…"
           rows={2}
-          className="rounded-lg border border-border bg-card px-3 py-2.5 text-base"
+          className="rounded-lg border border-border bg-surface px-3 py-2.5 text-base text-foreground outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/25"
         />
         <Button type="submit" disabled={posting || !content.trim()} className="self-end">
           Post
@@ -121,7 +121,7 @@ export function Feed({ canModerate }: { canModerate: boolean }) {
                     value={commentDrafts[p.id] ?? ""}
                     onChange={(e) => setCommentDrafts((prev) => ({ ...prev, [p.id]: e.target.value }))}
                     placeholder="Add a comment…"
-                    className="flex-1 rounded-lg border border-border bg-card px-3 py-1.5 text-sm"
+                    className="flex-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
                   />
                   <button onClick={() => comment(p.id)} className="text-sm font-medium text-primary">
                     Send
