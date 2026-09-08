@@ -23,8 +23,22 @@ export function handleApiError(err: unknown) {
   if (err instanceof ZodError) {
     return errorJson(422, "VALIDATION_ERROR", err.issues.map((i) => i.message).join("; "));
   }
-  console.error(err);
+  console.error("[api] unhandled error:", describeError(err));
   return errorJson(500, "INTERNAL_ERROR", "Something went wrong.");
+}
+
+/** Recursively unwraps `.cause` chains so the real root error survives log-viewer truncation. */
+function describeError(err: unknown, depth = 0): unknown {
+  if (depth > 5 || !(err instanceof Error)) return err;
+  const { name, message, code, errno, sqlState } = err as Error & { code?: unknown; errno?: unknown; sqlState?: unknown };
+  return {
+    name,
+    message,
+    ...(code !== undefined && { code }),
+    ...(errno !== undefined && { errno }),
+    ...(sqlState !== undefined && { sqlState }),
+    ...(err.cause !== undefined && { cause: describeError(err.cause, depth + 1) }),
+  };
 }
 
 export const Errors = {
