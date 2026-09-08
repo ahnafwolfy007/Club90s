@@ -1,0 +1,749 @@
+// CLUB 90s — Prisma schema
+// See CLUB90s_SRS_TDD.md §22 (Database Architecture) for the design rationale.
+// Naming: Prisma models/fields are camelCase; @@map/@map pin the underlying
+// snake_case table/column names to match the SRS's table list in §22.2.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ---------------------------------------------------------------------------
+// Identity & access
+// ---------------------------------------------------------------------------
+
+enum UserStatus {
+  unactivated
+  active
+  suspended
+}
+
+model User {
+  id                  String     @id @default(uuid())
+  email               String     @unique @db.VarChar(255)
+  passwordHash        String?    @map("password_hash") @db.VarChar(255)
+  status              UserStatus @default(unactivated)
+  failedLoginAttempts Int        @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime?  @map("locked_until")
+  createdAt           DateTime   @default(now()) @map("created_at")
+
+  member           Member?
+  activationTokens ActivationToken[]
+  notifications    Notification[]
+  auditLogsAsActor AuditLog[]
+  sessions         Session[]
+
+  @@map("users")
+}
+
+/// Server-side session store (SRS §25.3): sessions are revocable immediately
+/// (e.g. disabling a compromised admin), which a stateless JWT can't do.
+/// The cookie carries a random token; only its hash is persisted.
+model Session {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique @map("token_hash") @db.VarChar(255)
+  userId    String    @map("user_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+enum MemberStatus {
+  active
+  inactive
+  pending
+}
+
+model Member {
+  id               String       @id @default(uuid())
+  userId           String       @unique @map("user_id")
+  fullName         String       @map("full_name") @db.VarChar(200)
+  profilePhotoUrl  String?      @map("profile_photo_url") @db.VarChar(1000)
+  dob              DateTime?    @db.Date
+  joiningDate      DateTime     @map("joining_date") @db.Date
+  position         String?      @db.VarChar(100)
+  jerseyNumber     Int?         @map("jersey_number")
+  preferredFoot    String?      @map("preferred_foot") @db.VarChar(20)
+  status           MemberStatus @default(pending)
+  phone            String?      @db.VarChar(30)
+  emergencyContact String?      @map("emergency_contact") @db.VarChar(255)
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  user                     User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleAssignments          RoleAssignment[]         @relation("MemberRoleAssignments")
+  roleAssignmentsGranted   RoleAssignment[]         @relation("RoleAssignmentGrantedBy")
+  matchesOrganized         Match[]                  @relation("MatchOrganizer")
+  matchRsvps               MatchRsvp[]
+  teamPlayers              TeamPlayer[]
+  teamsCreated             Team[]                   @relation("TeamCreatedBy")
+  tournamentPlayerEntries  TournamentPlayer[]
+  tournamentTeamsOwned     TournamentTeam[]
+  bidsPlaced               Bid[]
+  transactionsRecorded     FinancialTransaction[]   @relation("TransactionRecordedBy")
+  transactionsVoided       FinancialTransaction[]   @relation("TransactionVoidedBy")
+  transactionsAbout        FinancialTransaction[]   @relation("TransactionForMember")
+  posts                    Post[]
+  postComments             PostComment[]
+  postReactions            PostReaction[]
+  achievements             Achievement[]
+  announcements            Announcement[]
+  electionsCreated         Election[]               @relation("ElectionCreatedBy")
+  electionsFirstConfirmed  Election[]               @relation("ElectionFirstConfirmedBy")
+  electionsSecondConfirmed Election[]               @relation("ElectionSecondConfirmedBy")
+  electionCandidacies      ElectionCandidate[]
+  recruitmentsSubmitted    RecruitmentApplication[] @relation("RecruitmentSubmittedBy")
+  recruitmentsReviewed     RecruitmentApplication[] @relation("RecruitmentReviewedBy")
+  importBatches            ImportBatch[]
+  sectorsCreated           Sector[]
+  clubSettingsUpdated      ClubSetting[]
+
+  @@index([status])
+  @@map("members")
+}
+
+model Sector {
+  id          String   @id @default(uuid())
+  name        String   @unique @db.VarChar(100)
+  description String?  @db.Text
+  createdById String   @map("created_by")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  createdBy       Member           @relation(fields: [createdById], references: [id])
+  roleAssignments RoleAssignment[]
+  elections       Election[]
+
+  @@map("sectors")
+}
+
+enum RoleName {
+  member
+  president
+  admin
+  advisor
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        RoleName @unique
+  description String?  @db.VarChar(255)
+
+  roleAssignments RoleAssignment[]
+
+  @@map("roles")
+}
+
+enum RoleAssignmentStatus {
+  active
+  suspended
+  removed
+}
+
+model RoleAssignment {
+  id          String               @id @default(uuid())
+  memberId    String               @map("member_id")
+  roleId      String               @map("role_id")
+  sectorId    String?              @map("sector_id")
+  status      RoleAssignmentStatus @default(active)
+  grantedById String               @map("granted_by")
+  grantedAt   DateTime             @default(now()) @map("granted_at")
+  endsAt      DateTime?            @map("ends_at")
+
+  member    Member  @relation("MemberRoleAssignments", fields: [memberId], references: [id], onDelete: Cascade)
+  role      Role    @relation(fields: [roleId], references: [id])
+  sector    Sector? @relation(fields: [sectorId], references: [id])
+  grantedBy Member  @relation("RoleAssignmentGrantedBy", fields: [grantedById], references: [id])
+
+  @@index([memberId, status])
+  @@index([roleId, sectorId, status])
+  @@map("role_assignments")
+}
+
+// ---------------------------------------------------------------------------
+// Matches, RSVP, team formation
+// ---------------------------------------------------------------------------
+
+enum MatchStatus {
+  draft
+  published
+  cancelled
+  completed
+}
+
+model Match {
+  id           String      @id @default(uuid())
+  title        String      @db.VarChar(200)
+  matchDate    DateTime    @map("match_date") @db.Date
+  startTime    DateTime    @map("start_time")
+  endTime      DateTime?   @map("end_time")
+  venueName    String      @map("venue_name") @db.VarChar(200)
+  venueAddress String?     @map("venue_address") @db.VarChar(500)
+  mapLink      String?     @map("map_link") @db.VarChar(1000)
+  fee          Decimal?    @db.Decimal(10, 2)
+  maxPlayers   Int         @map("max_players")
+  rsvpDeadline DateTime    @map("rsvp_deadline")
+  organizerId  String      @map("organizer_id")
+  notes        String?     @db.Text
+  status       MatchStatus @default(draft)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  organizer             Member                 @relation("MatchOrganizer", fields: [organizerId], references: [id])
+  rsvps                 MatchRsvp[]
+  rsvpHistory           MatchRsvpHistory[]
+  teams                 Team[]
+  financialTransactions FinancialTransaction[]
+
+  @@index([matchDate])
+  @@index([status])
+  @@map("matches")
+}
+
+enum RsvpResponse {
+  in
+  out
+  maybe
+}
+
+model MatchRsvp {
+  id          String       @id @default(uuid())
+  matchId     String       @map("match_id")
+  memberId    String       @map("member_id")
+  response    RsvpResponse
+  waitlisted  Boolean      @default(false)
+  respondedAt DateTime     @default(now()) @map("responded_at")
+
+  match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, memberId])
+  @@index([matchId, response])
+  @@map("match_rsvps")
+}
+
+model MatchRsvpHistory {
+  id          String        @id @default(uuid())
+  matchId     String        @map("match_id")
+  memberId    String        @map("member_id")
+  oldResponse RsvpResponse? @map("old_response")
+  newResponse RsvpResponse  @map("new_response")
+  changedAt   DateTime      @default(now()) @map("changed_at")
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
+  @@map("match_rsvp_history")
+}
+
+enum TeamStatus {
+  draft
+  published
+  locked
+}
+
+model Team {
+  id           String     @id @default(uuid())
+  matchId      String?    @map("match_id")
+  tournamentId String?    @map("tournament_id")
+  name         String     @db.VarChar(100)
+  status       TeamStatus @default(draft)
+  createdById  String     @map("created_by")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  match      Match?       @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  tournament Tournament?  @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  createdBy  Member       @relation("TeamCreatedBy", fields: [createdById], references: [id])
+  players    TeamPlayer[]
+
+  @@index([matchId])
+  @@index([tournamentId])
+  @@map("teams")
+}
+
+model TeamPlayer {
+  id           String  @id @default(uuid())
+  teamId       String  @map("team_id")
+  memberId     String  @map("member_id")
+  isGoalkeeper Boolean @default(false) @map("is_goalkeeper")
+
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, memberId])
+  @@map("team_players")
+}
+
+// ---------------------------------------------------------------------------
+// Tournaments & bidding
+// ---------------------------------------------------------------------------
+
+enum TournamentStatus {
+  draft
+  open
+  in_progress
+  completed
+  cancelled
+}
+
+model Tournament {
+  id                   String           @id @default(uuid())
+  name                 String           @db.VarChar(200)
+  startDate            DateTime         @map("start_date") @db.Date
+  registrationDeadline DateTime?        @map("registration_deadline")
+  numTeams             Int              @map("num_teams")
+  format               String           @db.VarChar(50)
+  rules                String?          @db.Text
+  venue                String?          @db.VarChar(200)
+  fee                  Decimal?         @db.Decimal(10, 2)
+  prizeInfo            String?          @map("prize_info") @db.Text
+  status               TournamentStatus @default(draft)
+  biddingEnabled       Boolean          @default(false) @map("bidding_enabled")
+  createdAt            DateTime         @default(now()) @map("created_at")
+  updatedAt            DateTime         @updatedAt @map("updated_at")
+
+  // Turn-based bidding auction state (SRS §11.2) — one player "up" at a time,
+  // server-authoritative soft-close timer. currentPlayerId intentionally has
+  // no @relation: it's a same-table-family pointer resolved manually to keep
+  // the schema's relation graph simple.
+  startingBid        Decimal   @default(50) @map("starting_bid") @db.Decimal(10, 2)
+  bidIncrement       Decimal   @default(10) @map("bid_increment") @db.Decimal(10, 2)
+  bidTimerSeconds    Int       @default(20) @map("bid_timer_seconds")
+  currentPlayerId    String?   @map("current_player_id")
+  currentBidDeadline DateTime? @map("current_bid_deadline")
+
+  teams                 Team[]
+  players               TournamentPlayer[]
+  bidTeams              TournamentTeam[]
+  financialTransactions FinancialTransaction[]
+
+  @@index([status])
+  @@map("tournaments")
+}
+
+enum TournamentPlayerStatus {
+  pooled
+  sold
+  unsold
+}
+
+model TournamentPlayer {
+  id           String                 @id @default(uuid())
+  tournamentId String                 @map("tournament_id")
+  memberId     String                 @map("member_id")
+  status       TournamentPlayerStatus @default(pooled)
+  auctionOrder Int?                   @map("auction_order")
+  soldToTeamId String?                @map("sold_to_team_id")
+  soldAmount   Decimal?               @map("sold_amount") @db.Decimal(10, 2)
+
+  tournament Tournament      @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  member     Member          @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  soldToTeam TournamentTeam? @relation("SoldPlayers", fields: [soldToTeamId], references: [id])
+  bids       Bid[]
+
+  @@unique([tournamentId, memberId])
+  @@index([tournamentId, status])
+  @@map("tournament_players")
+}
+
+model TournamentTeam {
+  id              String   @id @default(uuid())
+  tournamentId    String   @map("tournament_id")
+  teamName        String   @map("team_name") @db.VarChar(100)
+  ownerMemberId   String   @map("owner_member_id")
+  startingBudget  Decimal  @map("starting_budget") @db.Decimal(10, 2)
+  remainingBudget Decimal  @map("remaining_budget") @db.Decimal(10, 2)
+  minSquad        Int      @map("min_squad")
+  maxSquad        Int      @map("max_squad")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  tournament  Tournament         @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  ownerMember Member             @relation(fields: [ownerMemberId], references: [id])
+  soldPlayers TournamentPlayer[] @relation("SoldPlayers")
+  bids        Bid[]
+
+  @@unique([tournamentId, ownerMemberId])
+  @@map("tournament_teams")
+}
+
+model Bid {
+  id                 String   @id @default(uuid())
+  tournamentPlayerId String   @map("tournament_player_id")
+  tournamentTeamId   String   @map("tournament_team_id")
+  amount             Decimal  @db.Decimal(10, 2)
+  placedById         String   @map("placed_by")
+  placedAt           DateTime @default(now()) @map("placed_at")
+  isWinning          Boolean  @default(false) @map("is_winning")
+  clientRequestId    String?  @map("client_request_id") @db.VarChar(100)
+
+  tournamentPlayer TournamentPlayer @relation(fields: [tournamentPlayerId], references: [id], onDelete: Cascade)
+  tournamentTeam   TournamentTeam   @relation(fields: [tournamentTeamId], references: [id], onDelete: Cascade)
+  placedBy         Member           @relation(fields: [placedById], references: [id])
+
+  @@unique([tournamentPlayerId, clientRequestId])
+  @@index([tournamentPlayerId, amount])
+  @@map("bids")
+}
+
+// ---------------------------------------------------------------------------
+// Finance
+// ---------------------------------------------------------------------------
+
+enum TransactionType {
+  income
+  expense
+}
+
+model FinanceCategory {
+  id       String          @id @default(uuid())
+  name     String          @unique @db.VarChar(100)
+  type     TransactionType
+  isActive Boolean         @default(true) @map("is_active")
+
+  transactions FinancialTransaction[]
+
+  @@map("finance_categories")
+}
+
+enum TransactionStatus {
+  posted
+  voided
+}
+
+enum TransactionSource {
+  manual
+  migrated
+}
+
+model FinancialTransaction {
+  id                      String            @id @default(uuid())
+  type                    TransactionType
+  categoryId              String            @map("category_id")
+  amount                  Decimal           @db.Decimal(10, 2)
+  description             String?           @db.VarChar(500)
+  memberId                String?           @map("member_id")
+  matchId                 String?           @map("match_id")
+  tournamentId            String?           @map("tournament_id")
+  paymentMethod           String?           @map("payment_method") @db.VarChar(30)
+  recordedById            String            @map("recorded_by")
+  createdAt               DateTime          @default(now()) @map("created_at")
+  status                  TransactionStatus @default(posted)
+  voidedById              String?           @map("voided_by")
+  voidedAt                DateTime?         @map("voided_at")
+  voidReason              String?           @map("void_reason") @db.VarChar(500)
+  reversalOfTransactionId String?           @map("reversal_of_transaction_id")
+  source                  TransactionSource @default(manual)
+  importBatchId           String?           @map("import_batch_id")
+  attachmentUrl           String?           @map("attachment_url") @db.VarChar(1000)
+  feeMonth                String?           @map("fee_month") @db.VarChar(7) // 'YYYY-MM', for monthly-fee transactions
+  dateEstimated           Boolean           @default(false) @map("date_estimated")
+  originalValue           String?           @map("original_value") @db.VarChar(255)
+
+  category    FinanceCategory        @relation(fields: [categoryId], references: [id])
+  member      Member?                @relation("TransactionForMember", fields: [memberId], references: [id])
+  recordedBy  Member                 @relation("TransactionRecordedBy", fields: [recordedById], references: [id])
+  voidedBy    Member?                @relation("TransactionVoidedBy", fields: [voidedById], references: [id])
+  match       Match?                 @relation(fields: [matchId], references: [id])
+  tournament  Tournament?            @relation(fields: [tournamentId], references: [id])
+  importBatch ImportBatch?           @relation(fields: [importBatchId], references: [id])
+  reversalOf  FinancialTransaction?  @relation("Reversal", fields: [reversalOfTransactionId], references: [id])
+  reversals   FinancialTransaction[] @relation("Reversal")
+
+  @@index([memberId, categoryId])
+  @@index([matchId])
+  @@index([tournamentId])
+  @@index([status])
+  @@map("financial_transactions")
+}
+
+model ClubSetting {
+  key         String   @id @db.VarChar(100)
+  value       String   @db.VarChar(1000)
+  updatedById String?  @map("updated_by")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  updatedBy Member? @relation(fields: [updatedById], references: [id])
+
+  @@map("club_settings")
+}
+
+// ---------------------------------------------------------------------------
+// Community: feed, achievements, announcements
+// ---------------------------------------------------------------------------
+
+enum PostStatus {
+  visible
+  hidden
+  removed
+}
+
+model Post {
+  id        String     @id @default(uuid())
+  authorId  String     @map("author_id")
+  content   String     @db.Text
+  sectorTag String?    @map("sector_tag")
+  imageUrl  String?    @map("image_url") @db.VarChar(1000)
+  createdAt DateTime   @default(now()) @map("created_at")
+  editedAt  DateTime?  @map("edited_at")
+  status    PostStatus @default(visible)
+
+  author    Member         @relation(fields: [authorId], references: [id])
+  comments  PostComment[]
+  reactions PostReaction[]
+
+  @@index([createdAt])
+  @@map("posts")
+}
+
+model PostReaction {
+  id           String   @id @default(uuid())
+  postId       String   @map("post_id")
+  memberId     String   @map("member_id")
+  reactionType String   @map("reaction_type") @db.VarChar(20)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, memberId])
+  @@map("post_reactions")
+}
+
+model PostComment {
+  id        String     @id @default(uuid())
+  postId    String     @map("post_id")
+  authorId  String     @map("author_id")
+  content   String     @db.Text
+  createdAt DateTime   @default(now()) @map("created_at")
+  status    PostStatus @default(visible)
+
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author Member @relation(fields: [authorId], references: [id])
+
+  @@index([postId])
+  @@map("post_comments")
+}
+
+enum AchievementVisibility {
+  all_members
+  private
+}
+
+model Achievement {
+  id          String                @id @default(uuid())
+  memberId    String                @map("member_id")
+  title       String                @db.VarChar(200)
+  description String?               @db.Text
+  eventName   String?               @map("event_name") @db.VarChar(200)
+  issuingOrg  String?               @map("issuing_org") @db.VarChar(200)
+  year        Int?
+  imageUrl    String?               @map("image_url") @db.VarChar(1000)
+  visibility  AchievementVisibility @default(all_members)
+  createdAt   DateTime              @default(now()) @map("created_at")
+
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@map("achievements")
+}
+
+model Announcement {
+  id             String    @id @default(uuid())
+  authorId       String    @map("author_id")
+  title          String    @db.VarChar(200)
+  description    String    @db.Text
+  type           String    @db.VarChar(30)
+  priority       String    @default("normal") @db.VarChar(20)
+  targetAudience String    @default("all") @map("target_audience") @db.VarChar(50)
+  attachmentUrl  String?   @map("attachment_url") @db.VarChar(1000)
+  publishedAt    DateTime  @default(now()) @map("published_at")
+  expiresAt      DateTime? @map("expires_at")
+
+  author Member @relation(fields: [authorId], references: [id])
+
+  @@index([publishedAt])
+  @@map("announcements")
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  type      String    @db.VarChar(50)
+  payload   Json
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@map("notifications")
+}
+
+// ---------------------------------------------------------------------------
+// Elections — see SRS §16. election_voters and election_ballots deliberately
+// share NO foreign key: that gap is the ballot-privacy boundary, not an
+// oversight. Never add a member/voter reference to ElectionBallot.
+// ---------------------------------------------------------------------------
+
+enum ElectionStatus {
+  draft
+  open
+  closed
+  cancelled
+}
+
+model Election {
+  id          String         @id @default(uuid())
+  sectorId    String         @map("sector_id")
+  title       String         @db.VarChar(200)
+  startAt     DateTime       @map("start_at")
+  endAt       DateTime       @map("end_at")
+  status      ElectionStatus @default(draft)
+  createdById String         @map("created_by")
+
+  // Tier 3 two-admin approval (SRS §16.5): winning an election never
+  // auto-grants the role. A first admin confirms, a *different* second admin
+  // must independently confirm before the role assignment is created.
+  firstConfirmedById  String?   @map("first_confirmed_by")
+  firstConfirmedAt    DateTime? @map("first_confirmed_at")
+  secondConfirmedById String?   @map("second_confirmed_by")
+  secondConfirmedAt   DateTime? @map("second_confirmed_at")
+  winningCandidateId  String?   @map("winning_candidate_id")
+
+  sector            Sector              @relation(fields: [sectorId], references: [id])
+  createdBy         Member              @relation("ElectionCreatedBy", fields: [createdById], references: [id])
+  firstConfirmedBy  Member?             @relation("ElectionFirstConfirmedBy", fields: [firstConfirmedById], references: [id])
+  secondConfirmedBy Member?             @relation("ElectionSecondConfirmedBy", fields: [secondConfirmedById], references: [id])
+  candidates        ElectionCandidate[]
+  voters            ElectionVoter[]
+  ballots           ElectionBallot[]
+
+  @@map("elections")
+}
+
+model ElectionCandidate {
+  id         String @id @default(uuid())
+  electionId String @map("election_id")
+  memberId   String @map("member_id")
+
+  election Election         @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  member   Member           @relation(fields: [memberId], references: [id])
+  ballots  ElectionBallot[]
+
+  @@unique([electionId, memberId])
+  @@map("election_candidates")
+}
+
+/// Eligibility + one-vote enforcement ONLY. No candidate/choice column here — see module note above.
+model ElectionVoter {
+  id         String    @id @default(uuid())
+  electionId String    @map("election_id")
+  memberId   String    @map("member_id")
+  votedAt    DateTime? @map("voted_at")
+
+  election Election @relation(fields: [electionId], references: [id], onDelete: Cascade)
+
+  @@unique([electionId, memberId])
+  @@map("election_voters")
+}
+
+/// Anonymous ballots. NO member/voter column here by design — see module note above.
+model ElectionBallot {
+  id          String   @id @default(uuid())
+  electionId  String   @map("election_id")
+  candidateId String   @map("candidate_id")
+  castDate    DateTime @map("cast_date") @db.Date
+
+  election  Election          @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  candidate ElectionCandidate @relation(fields: [candidateId], references: [id])
+
+  @@index([electionId])
+  @@map("election_ballots")
+}
+
+// ---------------------------------------------------------------------------
+// Recruitment, migration, audit
+// ---------------------------------------------------------------------------
+
+enum RecruitmentStatus {
+  submitted
+  in_review
+  approved
+  rejected
+}
+
+model RecruitmentApplication {
+  id            String            @id @default(uuid())
+  fullName      String            @map("full_name") @db.VarChar(200)
+  contactInfo   String            @map("contact_info") @db.VarChar(255)
+  submittedById String?           @map("submitted_by")
+  status        RecruitmentStatus @default(submitted)
+  reviewedById  String?           @map("reviewed_by")
+  notes         String?           @db.Text
+  createdAt     DateTime          @default(now()) @map("created_at")
+
+  submittedBy Member? @relation("RecruitmentSubmittedBy", fields: [submittedById], references: [id])
+  reviewedBy  Member? @relation("RecruitmentReviewedBy", fields: [reviewedById], references: [id])
+
+  @@map("recruitment_applications")
+}
+
+enum ImportType {
+  members
+  finance
+}
+
+model ImportBatch {
+  id           String     @id @default(uuid())
+  type         ImportType
+  fileName     String     @map("file_name") @db.VarChar(255)
+  importedById String     @map("imported_by")
+  importedAt   DateTime   @default(now()) @map("imported_at")
+  summary      Json
+
+  importedBy   Member                 @relation(fields: [importedById], references: [id])
+  transactions FinancialTransaction[]
+
+  @@map("import_batches")
+}
+
+model ActivationToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash") @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("activation_tokens")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  actorId     String?  @map("actor_id")
+  action      String   @db.VarChar(100)
+  entityType  String   @map("entity_type") @db.VarChar(100)
+  entityId    String?  @map("entity_id")
+  beforeValue Json?    @map("before_value")
+  afterValue  Json?    @map("after_value")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@map("audit_logs")
+}
