@@ -21,6 +21,8 @@ type MemberDetailData = {
 
 const ROLE_OPTIONS: RoleName[] = ["member", "president", "admin", "advisor"];
 
+const PLACEHOLDER_EMAIL_SUFFIX = "@club90s.local";
+
 export function MemberDetail({ member, sectors }: { member: MemberDetailData; sectors: { id: string; name: string }[] }) {
   const router = useRouter();
   const [role, setRole] = useState<RoleName>("president");
@@ -29,6 +31,30 @@ export function MemberDetail({ member, sectors }: { member: MemberDetailData; se
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [resent, setResent] = useState(false);
+
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [emailDraft, setEmailDraft] = useState(member.email);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [emailSaving, setEmailSaving] = useState(false);
+  const isPlaceholderEmail = member.email.endsWith(PLACEHOLDER_EMAIL_SUFFIX);
+
+  async function saveEmail(e: React.FormEvent) {
+    e.preventDefault();
+    setEmailError(null);
+    setEmailSaving(true);
+    try {
+      await apiFetch(`/api/v1/admin/members/${member.id}/email`, {
+        method: "PATCH",
+        body: JSON.stringify({ email: emailDraft }),
+      });
+      setEditingEmail(false);
+      router.refresh();
+    } catch (err) {
+      setEmailError(err instanceof ClientApiError ? err.message : "Something went wrong.");
+    } finally {
+      setEmailSaving(false);
+    }
+  }
 
   async function assignRole(e: React.FormEvent) {
     e.preventDefault();
@@ -85,17 +111,59 @@ export function MemberDetail({ member, sectors }: { member: MemberDetailData; se
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="text-lg font-semibold">{member.fullName}</h1>
-        <p className="text-sm text-muted-foreground">{member.email}</p>
+
+        {editingEmail ? (
+          <form onSubmit={saveEmail} className="mt-1.5 flex flex-col gap-2">
+            <Input
+              type="email"
+              value={emailDraft}
+              onChange={(e) => setEmailDraft(e.target.value)}
+              autoFocus
+              required
+            />
+            {emailError && (
+              <p className="rounded-lg border border-danger/25 bg-danger/10 px-3 py-2 text-sm text-danger">{emailError}</p>
+            )}
+            <div className="flex gap-2">
+              <Button type="submit" variant="secondary" disabled={emailSaving}>
+                {emailSaving ? "Saving…" : "Save email"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setEditingEmail(false);
+                  setEmailDraft(member.email);
+                  setEmailError(null);
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <div className="mt-0.5 flex items-center gap-2">
+            <p className="text-sm text-muted-foreground">{member.email}</p>
+            <button onClick={() => setEditingEmail(true)} className="text-sm font-medium text-primary hover:text-primary-light">
+              Edit
+            </button>
+            {isPlaceholderEmail && (
+              <span className="rounded-full bg-warning/15 px-2 py-0.5 text-xs text-warning">no real email</span>
+            )}
+          </div>
+        )}
       </div>
 
       <Card>
         <p className="text-sm font-medium">Account status: {member.userStatus}</p>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          {member.userStatus === "unactivated"
-            ? "Hasn't set a password yet — send them an activation link."
-            : "Sending a reset link doesn't disable their current password until they use it."}
+          {isPlaceholderEmail
+            ? "This member has no real email on file — edit it above before sending a link, or it'll go nowhere."
+            : member.userStatus === "unactivated"
+              ? "Hasn't set a password yet — send them an activation link."
+              : "Sending a reset link doesn't disable their current password until they use it."}
         </p>
-        <Button variant="secondary" className="mt-2" onClick={sendCredentialLink} disabled={loading}>
+        <Button variant="secondary" className="mt-2" onClick={sendCredentialLink} disabled={loading || isPlaceholderEmail}>
           {resent ? "Sent ✓" : member.userStatus === "unactivated" ? "Send activation link" : "Send password reset link"}
         </Button>
       </Card>

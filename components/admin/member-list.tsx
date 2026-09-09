@@ -14,8 +14,11 @@ type MemberSummary = {
   email?: string;
 };
 
+const PLACEHOLDER_EMAIL_SUFFIX = "@club90s.local";
+
 export function MemberList() {
   const [q, setQ] = useState("");
+  const [onlyMissingEmail, setOnlyMissingEmail] = useState(false);
   const [members, setMembers] = useState<MemberSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,26 +39,47 @@ export function MemberList() {
     };
   }, [q]);
 
+  const missingEmailCount = members.filter((m) => m.email?.endsWith(PLACEHOLDER_EMAIL_SUFFIX)).length;
+  const visible = onlyMissingEmail ? members.filter((m) => m.email?.endsWith(PLACEHOLDER_EMAIL_SUFFIX)) : members;
+
   return (
     <div className="flex flex-col gap-3">
       <Input placeholder="Search by name or email…" value={q} onChange={(e) => setQ(e.target.value)} />
+      {missingEmailCount > 0 && (
+        <button
+          onClick={() => setOnlyMissingEmail((v) => !v)}
+          className={`self-start rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+            onlyMissingEmail ? "bg-warning text-background" : "border border-warning/30 bg-warning/10 text-warning"
+          }`}
+        >
+          {onlyMissingEmail ? "Showing" : ""} {missingEmailCount} without a real email {onlyMissingEmail ? "· tap to clear" : ""}
+        </button>
+      )}
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
-      ) : members.length === 0 ? (
+      ) : visible.length === 0 ? (
         <p className="text-sm text-muted-foreground">No members found.</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {members.map((m) => (
-            <Link key={m.id} href={`/admin/members/${m.id}`}>
-              <Card className="flex items-center justify-between active:bg-muted">
-                <div>
-                  <p className="font-medium">{m.fullName}</p>
-                  <p className="text-sm text-muted-foreground">{m.email ?? m.position ?? ""}</p>
-                </div>
-                <StatusBadge status={m.status} />
-              </Card>
-            </Link>
-          ))}
+          {visible.map((m) => {
+            const missingEmail = m.email?.endsWith(PLACEHOLDER_EMAIL_SUFFIX);
+            return (
+              <Link key={m.id} href={`/admin/members/${m.id}`}>
+                <Card className="flex items-center justify-between active:bg-muted">
+                  <div>
+                    <p className="font-medium">{m.fullName}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {missingEmail ? "No real email on file" : (m.email ?? m.position ?? "")}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {missingEmail && <span className="rounded-full bg-warning/15 px-2 py-0.5 text-xs text-warning">fix email</span>}
+                    <StatusBadge status={m.status} />
+                  </div>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

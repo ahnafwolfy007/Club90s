@@ -33,6 +33,10 @@ export const updateOwnProfileSchema = z.object({
   emergencyContact: z.string().trim().max(255).nullable().optional(),
 });
 
+export const updateMemberEmailSchema = z.object({
+  email: z.string().trim().toLowerCase().email("Enter a valid email address."),
+});
+
 export const assignRoleSchema = z.object({
   memberId: z.string().min(1),
   role: z.enum(["member", "president", "admin", "advisor"]),
