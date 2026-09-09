@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiFetch, ClientApiError } from "@/lib/api/client";
+import { MemberMerge } from "@/components/admin/member-merge";
 import type { RoleName } from "@/app/generated/prisma/enums";
 
 type RoleAssignmentRow = { id: string; role: RoleName; sectorName: string | null };
@@ -66,10 +67,12 @@ export function MemberDetail({ member, sectors }: { member: MemberDetailData; se
     }
   }
 
-  async function resendActivation() {
+  /** Sends an activation link for a never-logged-in account, a reset link otherwise. */
+  async function sendCredentialLink() {
     setLoading(true);
+    setError(null);
     try {
-      await apiFetch(`/api/v1/admin/members/${member.id}/resend-activation`, { method: "POST" });
+      await apiFetch(`/api/v1/admin/members/${member.id}/send-password-reset`, { method: "POST" });
       setResent(true);
     } catch (err) {
       setError(err instanceof ClientApiError ? err.message : "Something went wrong.");
@@ -87,11 +90,14 @@ export function MemberDetail({ member, sectors }: { member: MemberDetailData; se
 
       <Card>
         <p className="text-sm font-medium">Account status: {member.userStatus}</p>
-        {member.userStatus === "unactivated" && (
-          <Button variant="secondary" className="mt-2" onClick={resendActivation} disabled={loading}>
-            {resent ? "Sent" : "Resend activation email"}
-          </Button>
-        )}
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {member.userStatus === "unactivated"
+            ? "Hasn't set a password yet — send them an activation link."
+            : "Sending a reset link doesn't disable their current password until they use it."}
+        </p>
+        <Button variant="secondary" className="mt-2" onClick={sendCredentialLink} disabled={loading}>
+          {resent ? "Sent ✓" : member.userStatus === "unactivated" ? "Send activation link" : "Send password reset link"}
+        </Button>
       </Card>
 
       <Card>
@@ -155,6 +161,8 @@ export function MemberDetail({ member, sectors }: { member: MemberDetailData; se
           </Button>
         </form>
       </Card>
+
+      <MemberMerge memberId={member.id} memberName={member.fullName} />
     </div>
   );
 }

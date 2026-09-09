@@ -68,6 +68,27 @@ This link expires in 72 hours. If you didn't expect this email, you can ignore i
   };
 }
 
+export function passwordResetEmail(fullName: string, resetUrl: string) {
+  return {
+    subject: "Reset your CLUB 90s password",
+    text: `Hi ${fullName},
+
+A CLUB 90s admin has sent you a password reset link. Set a new password here:
+
+${resetUrl}
+
+This link expires in 72 hours and can only be used once. If you didn't expect this, you can ignore it — your current password stays active until you use the link.
+
+— CLUB 90s`,
+    html: layout(
+      "Reset your password",
+      `<p style="margin:0 0 8px;">Hi ${escapeHtml(fullName)}, a club admin has sent you a link to set a new password.</p>
+       ${button("Set a new password", resetUrl)}
+       <p style="margin:0;color:#a89070;font-size:13px;">This link expires in 72 hours and works once. If you weren't expecting it, ignore this email — your current password stays active.</p>`,
+    ),
+  };
+}
+
 export function paymentReceiptEmail(fullName: string, amount: string, category: string, feeMonth?: string | null) {
   const period = feeMonth ? ` for ${feeMonth}` : "";
   return {

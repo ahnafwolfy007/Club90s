@@ -76,6 +76,10 @@ model Member {
   status           MemberStatus @default(pending)
   phone            String?      @db.VarChar(30)
   emergencyContact String?      @map("emergency_contact") @db.VarChar(255)
+  /// e.g. "Senior Board" / "Senior Non-Board" — the club's own tiering, which
+  /// drives how much a member is expected to contribute each month.
+  memberCategory   String?      @map("member_category") @db.VarChar(50)
+  bloodGroup       String?      @map("blood_group") @db.VarChar(10)
   createdAt        DateTime     @default(now()) @map("created_at")
   updatedAt        DateTime     @updatedAt @map("updated_at")
 

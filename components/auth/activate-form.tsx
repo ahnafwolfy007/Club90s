@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function ActivateForm({ token }: { token: string }) {
+export function ActivateForm({ token, submitLabel = "Activate account" }: { token: string; submitLabel?: string }) {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -78,7 +78,7 @@ export function ActivateForm({ token }: { token: string }) {
         disabled={loading}
         className="mt-2 w-full rounded-lg bg-primary px-4 py-3 text-base font-medium text-primary-foreground disabled:opacity-60"
       >
-        {loading ? "Activating…" : "Activate account"}
+        {loading ? "Saving…" : submitLabel}
       </button>
     </form>
   );

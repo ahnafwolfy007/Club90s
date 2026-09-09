@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MemberList } from "@/components/admin/member-list";
+import { PasswordResetBroadcast } from "@/components/admin/password-reset-broadcast";
 
 export default function AdminMembersPage() {
   return (
@@ -10,6 +11,7 @@ export default function AdminMembersPage() {
           Import
         </Link>
       </div>
+      <PasswordResetBroadcast />
       <MemberList />
     </>
   );
