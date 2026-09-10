@@ -121,3 +121,29 @@ function escapeHtml(value: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
+/** Six-digit code for self-registration (§4.1 — Division 1 reviews the applicant afterwards). */
+export function registrationCodeEmail(fullName: string, code: string) {
+  const text = `Hi ${fullName},
+
+Your CLUB 90s registration code is:
+
+    ${code}
+
+It expires in 10 minutes. If you didn't request this, you can ignore this email — no account has been created.
+
+— CLUB 90s`;
+
+  const html = layout(
+    "Your registration code",
+    `<p style="margin:0 0 16px;">Hi ${escapeHtml(fullName)},</p>
+     <p style="margin:0 0 20px;">Enter this code to confirm your email address:</p>
+     <div style="margin:0 0 20px;padding:18px;text-align:center;background:#0f0f0f;border:1px solid rgba(201,168,76,0.25);border-radius:10px;">
+       <span style="font-size:30px;letter-spacing:10px;font-weight:bold;color:#e8c96d;">${escapeHtml(code)}</span>
+     </div>
+     <p style="margin:0 0 8px;color:#a89070;font-size:13px;">The code expires in 10 minutes.</p>
+     <p style="margin:0;color:#a89070;font-size:13px;">Didn't request this? Ignore this email — no account has been created.</p>`,
+  );
+
+  return { subject: "Your CLUB 90s registration code", text, html };
+}

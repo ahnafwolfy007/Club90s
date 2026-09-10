@@ -16,6 +16,9 @@ type MemberDetailData = {
   email: string;
   userStatus: string;
   memberStatus: string;
+  membershipClass: "senior" | "junior";
+  squadType: "core" | "general";
+  isFoundingMember: boolean;
   roleAssignments: RoleAssignmentRow[];
 };
 
@@ -37,6 +40,53 @@ export function MemberDetail({ member, sectors }: { member: MemberDetailData; se
   const [emailError, setEmailError] = useState<string | null>(null);
   const [emailSaving, setEmailSaving] = useState(false);
   const isPlaceholderEmail = member.email.endsWith(PLACEHOLDER_EMAIL_SUFFIX);
+
+  const [classSaving, setClassSaving] = useState(false);
+  const [removeOpen, setRemoveOpen] = useState(false);
+  const [removeMode, setRemoveMode] = useState<"deactivate" | "delete">("deactivate");
+  const [confirmName, setConfirmName] = useState("");
+  const [removePassword, setRemovePassword] = useState("");
+  const [removeReason, setRemoveReason] = useState("");
+
+  /** §2.1 / §6.1 / §3.2 — every other rule keys off these. */
+  async function saveClassification(patch: Record<string, unknown>) {
+    setError(null);
+    setClassSaving(true);
+    try {
+      await apiFetch(`/api/v1/admin/members/${member.id}/classification`, {
+        method: "PATCH",
+        body: JSON.stringify(patch),
+      });
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof ClientApiError ? err.message : "Something went wrong.");
+    } finally {
+      setClassSaving(false);
+    }
+  }
+
+  async function removeAccount(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      await apiFetch(`/api/v1/admin/members/${member.id}/remove`, {
+        method: "POST",
+        body: JSON.stringify({
+          mode: removeMode,
+          currentPassword: removePassword,
+          confirmName,
+          reason: removeReason || undefined,
+        }),
+      });
+      router.push("/admin/members");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof ClientApiError ? err.message : "Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function saveEmail(e: React.FormEvent) {
     e.preventDefault();
@@ -168,6 +218,76 @@ export function MemberDetail({ member, sectors }: { member: MemberDetailData; se
         </Button>
       </Card>
 
+      {/* §2.1 / §6.1 / §3.2 — classification drives dues, deadlines and jersey priority */}
+      <Card accent>
+        <p className="text-sm font-medium">Classification</p>
+        <p className="mb-3 mt-0.5 text-xs text-muted-foreground">
+          Sets what this member owes and when they can vote.
+        </p>
+
+        <div className="flex flex-col gap-3">
+          <div>
+            <p className="mb-1.5 text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Membership (§2.1)</p>
+            <div className="flex gap-2">
+              {(["senior", "junior"] as const).map((value) => (
+                <button
+                  key={value}
+                  disabled={classSaving}
+                  onClick={() => saveClassification({ membershipClass: value })}
+                  className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
+                    member.membershipClass === value
+                      ? "bg-primary text-primary-foreground"
+                      : "border border-border-gold bg-muted text-muted-foreground hover:text-primary-light"
+                  }`}
+                >
+                  {value === "senior" ? "Senior" : "Junior"}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {member.membershipClass === "junior"
+                ? "Exempt from monthly dues (§2.1.2). Poll closes Tuesday evening (§5.2.2)."
+                : "Owes 200 BDT monthly (§2.2.1). Poll closes Wednesday evening (§5.2.3)."}
+            </p>
+          </div>
+
+          <div>
+            <p className="mb-1.5 text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Squad (§6.1)</p>
+            <div className="flex gap-2">
+              {(["core", "general"] as const).map((value) => (
+                <button
+                  key={value}
+                  disabled={classSaving}
+                  onClick={() => saveClassification({ squadType: value })}
+                  className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
+                    member.squadType === value
+                      ? "bg-primary text-primary-foreground"
+                      : "border border-border-gold bg-muted text-muted-foreground hover:text-primary-light"
+                  }`}
+                >
+                  {value === "core" ? "Competitive Core" : "General Pool"}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {member.squadType === "core"
+                ? "Priority on jersey numbers (§6.2.1); represents the club in tournaments."
+                : "Internal sessions and friendlies; may share a Core member's number (§6.2.2)."}
+            </p>
+          </div>
+
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={member.isFoundingMember}
+              disabled={classSaving}
+              onChange={(e) => saveClassification({ isFoundingMember: e.target.checked })}
+            />
+            Founding Member — lifetime honorary status (§3.2)
+          </label>
+        </div>
+      </Card>
+
       <Card>
         <p className="mb-2 text-sm font-medium">Current roles</p>
         {member.roleAssignments.length === 0 ? (
@@ -231,6 +351,68 @@ export function MemberDetail({ member, sectors }: { member: MemberDetailData; se
       </Card>
 
       <MemberMerge memberId={member.id} memberName={member.fullName} />
+
+      {/* Removal — deactivation is the safe default; deletion is guarded */}
+      <Card className="border-danger/25">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-danger">Remove from club</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Deactivating keeps every record and can be undone. Deleting is permanent.
+            </p>
+          </div>
+          <Button variant="secondary" onClick={() => setRemoveOpen((v) => !v)}>
+            {removeOpen ? "Cancel" : "Remove"}
+          </Button>
+        </div>
+
+        {removeOpen && (
+          <form onSubmit={removeAccount} className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
+            <div className="flex gap-2">
+              {(["deactivate", "delete"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setRemoveMode(mode)}
+                  className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    removeMode === mode
+                      ? mode === "delete"
+                        ? "bg-danger text-danger-foreground"
+                        : "bg-primary text-primary-foreground"
+                      : "border border-border-gold bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {mode === "deactivate" ? "Deactivate" : "Delete permanently"}
+                </button>
+              ))}
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              {removeMode === "deactivate"
+                ? "Suspends their login, ends any active session and suspends their roles. Their history, payments and posts stay exactly as they are."
+                : "Erases the account entirely. Refused if they have any payment history, since deleting them would detach those rows from the ledger — deactivate instead."}
+            </p>
+
+            <Input
+              placeholder={`Type "${member.fullName}" to confirm`}
+              value={confirmName}
+              onChange={(e) => setConfirmName(e.target.value)}
+              required
+            />
+            <Input placeholder="Reason (optional)" value={removeReason} onChange={(e) => setRemoveReason(e.target.value)} />
+            <Input
+              type="password"
+              placeholder="Your password (to confirm)"
+              value={removePassword}
+              onChange={(e) => setRemovePassword(e.target.value)}
+              required
+            />
+            <Button type="submit" variant="danger" disabled={loading}>
+              {loading ? "Working…" : removeMode === "deactivate" ? "Deactivate account" : "Delete permanently"}
+            </Button>
+          </form>
+        )}
+      </Card>
     </div>
   );
 }

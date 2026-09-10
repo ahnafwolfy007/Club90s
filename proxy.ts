@@ -6,7 +6,7 @@ import { SESSION_COOKIE } from "@/lib/auth/session";
 // Handler re-validates the session against the DB and re-checks permissions
 // (SRS §7.3). A missing/expired session here just means a redirect either
 // way; nothing here is trusted for authorization decisions.
-const PUBLIC_PATHS = ["/login", "/activate", "/reset"];
+const PUBLIC_PATHS = ["/login", "/activate", "/reset", "/register"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

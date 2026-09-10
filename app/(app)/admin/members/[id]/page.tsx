@@ -26,6 +26,9 @@ export default async function AdminMemberDetailPage({ params }: { params: Promis
         email: member.user.email,
         userStatus: member.user.status,
         memberStatus: member.status,
+        membershipClass: member.membershipClass,
+        squadType: member.squadType,
+        isFoundingMember: member.isFoundingMember,
         roleAssignments: member.roleAssignments.map((ra) => ({
           id: ra.id,
           role: ra.role.name,

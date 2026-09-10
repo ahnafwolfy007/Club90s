@@ -129,6 +129,24 @@ model Member {
   /// §3.2 — Founding Members hold lifetime honorary status and select the Advisory Board.
   isFoundingMember Boolean         @default(false) @map("is_founding_member")
 
+  // Full registration details — the same set the club's original registration
+  // form collected. A member counts as fully verified only once the required
+  // ones are present (see lib/registration/completeness.ts).
+  fathersName            String?   @map("fathers_name") @db.VarChar(200)
+  mothersName            String?   @map("mothers_name") @db.VarChar(200)
+  spouseName             String?   @map("spouse_name") @db.VarChar(200)
+  address                String?   @db.VarChar(500)
+  nidNumber              String?   @map("nid_number") @db.VarChar(50)
+  nidPhotoUrl            String?   @map("nid_photo_url") @db.VarChar(1000)
+  occupation             String?   @db.VarChar(200)
+  workplace              String?   @db.VarChar(200)
+  educationalInstitution String?   @map("educational_institution") @db.VarChar(200)
+  emergencyContactName   String?   @map("emergency_contact_name") @db.VarChar(200)
+  emergencyContactPhone  String?   @map("emergency_contact_phone") @db.VarChar(30)
+  interests              String?   @db.VarChar(500)
+  /// Set when every required registration field is present.
+  profileCompletedAt     DateTime? @map("profile_completed_at")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -865,4 +883,22 @@ model MemberMatchFeeChoice {
 
   @@unique([memberId, feeMonth])
   @@map("member_match_fee_choices")
+}
+
+/// One-time codes emailed to prove someone owns an address before they can
+/// register. Only the hash is stored, the same way activation tokens and
+/// sessions are handled — a leaked table shouldn't hand out valid codes.
+model EmailVerification {
+  id         String    @id @default(uuid())
+  email      String    @db.VarChar(255)
+  codeHash   String    @map("code_hash") @db.VarChar(255)
+  purpose    String    @default("registration") @db.VarChar(30)
+  expiresAt  DateTime  @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  /// Wrong guesses so far; the code dies once this hits the cap.
+  attempts   Int       @default(0)
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([email, purpose])
+  @@map("email_verifications")
 }

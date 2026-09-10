@@ -74,6 +74,12 @@ export function LoginForm({ next }: { next: string }) {
       >
         {loading ? "Signing in…" : "Sign in"}
       </button>
+      <p className="text-center text-xs text-muted-foreground">
+        Not registered yet?{" "}
+        <a href="/register" className="text-primary transition-colors hover:text-primary-light">
+          Create an account
+        </a>
+      </p>
     </form>
   );
 }

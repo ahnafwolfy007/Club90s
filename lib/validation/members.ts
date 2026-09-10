@@ -37,6 +37,24 @@ export const updateMemberEmailSchema = z.object({
   email: z.string().trim().toLowerCase().email("Enter a valid email address."),
 });
 
+/** Rulebook §2.1 / §6.1 / §3.2 — the classifications every other rule reads from. */
+export const updateClassificationSchema = z
+  .object({
+    membershipClass: z.enum(["senior", "junior"]).optional(),
+    squadType: z.enum(["core", "general"]).optional(),
+    isFoundingMember: z.boolean().optional(),
+  })
+  .refine((v) => Object.values(v).some((field) => field !== undefined), {
+    message: "Nothing to change.",
+  });
+
+/** Deleting a member account — see the route for why this needs the name typed back. */
+export const deleteMemberSchema = z.object({
+  currentPassword: z.string().min(1, "Re-enter your password to confirm this action."),
+  confirmName: z.string().trim().min(1, "Type the member's full name to confirm."),
+  reason: z.string().trim().max(500).optional(),
+});
+
 export const assignRoleSchema = z.object({
   memberId: z.string().min(1),
   role: z.enum(["member", "president", "admin", "advisor"]),
