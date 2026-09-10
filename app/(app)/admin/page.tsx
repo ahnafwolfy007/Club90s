@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 const SECTIONS = [
   { href: "/admin/members", label: "Members", description: "Search, review, and manage member accounts." },
   { href: "/admin/members/import", label: "Import members", description: "Bulk-import from a spreadsheet." },
+  { href: "/admin/standing", label: "Standing", description: "Who owes dues, who's suspended, who's cleared." },
   { href: "/admin/discipline", label: "Discipline", description: "Issue, lift or clear penalties under §7.2." },
   { href: "/admin/sectors", label: "Divisions", description: "The six Divisions of the Executive Committee (§4)." },
   { href: "/admin/elections", label: "Elections", description: "Create elections and confirm results." },

@@ -17,6 +17,8 @@ const STATUS_STYLES: Record<FeeStatus, string> = {
   overpaid: "bg-success/15 text-success",
   partial: "bg-warning/15 text-warning",
   unpaid: "bg-danger/15 text-danger",
+  // §2.1.2 — Junior Members owe nothing, which is a settled state, not a debt.
+  exempt: "bg-muted text-muted-foreground",
 };
 
 export function MyPayments({
@@ -31,10 +33,15 @@ export function MyPayments({
       <Card accent>
         <CardLabel>Dues this month</CardLabel>
         <div className="mt-1.5 flex items-center justify-between">
-          <p className="tabular text-2xl font-semibold text-primary-light">
-            {feeStatus.amountPaid.toLocaleString()}
-            <span className="text-base text-muted-foreground"> / {feeStatus.amountDue.toLocaleString()}</span>
-          </p>
+          {feeStatus.status === "exempt" ? (
+            // "0 / 0" would be technically true and completely unhelpful.
+            <p className="text-base text-muted-foreground">No dues as a Junior Member</p>
+          ) : (
+            <p className="tabular text-2xl font-semibold text-primary-light">
+              {feeStatus.amountPaid.toLocaleString()}
+              <span className="text-base text-muted-foreground"> / {feeStatus.amountDue.toLocaleString()}</span>
+            </p>
+          )}
           <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[feeStatus.status]}`}>
             {feeStatus.status}
           </span>
