@@ -63,6 +63,46 @@ enum MemberStatus {
   pending
 }
 
+/// Rulebook §2.1 — Senior Members pay monthly dues and hold voting rights;
+/// Junior Members (student athletes) are exempt from dues during their tenure.
+enum MembershipClass {
+  senior
+  junior
+}
+
+/// Rulebook §6.1 — the Competitive Core Squad represents the club in
+/// tournaments; the General Pool plays internal sessions and friendlies.
+enum SquadType {
+  core
+  general
+}
+
+/// Rulebook §3.3.2 — each Division is co-headed by a Senior and a Junior President.
+enum PresidentTier {
+  senior
+  junior
+}
+
+/// Rulebook §2.2.2 — a member picks one match-fee route per calendar month.
+enum MatchFeeOption {
+  monthly_pass
+  per_match
+}
+
+/// Rulebook §7.2.2 — the sanctions available to Division 6 and the Advisory Board.
+enum DisciplinaryType {
+  warning
+  match_suspension
+  fine
+  membership_revoked
+}
+
+enum DisciplinaryStatus {
+  active
+  served
+  rescinded
+}
+
 model Member {
   id               String       @id @default(uuid())
   userId           String       @unique @map("user_id")
@@ -80,8 +120,17 @@ model Member {
   /// drives how much a member is expected to contribute each month.
   memberCategory   String?      @map("member_category") @db.VarChar(50)
   bloodGroup       String?      @map("blood_group") @db.VarChar(10)
-  createdAt        DateTime     @default(now()) @map("created_at")
-  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  /// §2.1 — drives dues liability (Juniors are exempt) and the poll deadline
+  /// this member is held to (§5.2.2 Tuesday vs §5.2.3 Wednesday).
+  membershipClass  MembershipClass @default(senior) @map("membership_class")
+  /// §6.1 — Competitive Core Squad vs General Pool; also sets jersey priority (§6.2.1).
+  squadType        SquadType       @default(general) @map("squad_type")
+  /// §3.2 — Founding Members hold lifetime honorary status and select the Advisory Board.
+  isFoundingMember Boolean         @default(false) @map("is_founding_member")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   user                     User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   roleAssignments          RoleAssignment[]         @relation("MemberRoleAssignments")
@@ -110,8 +159,12 @@ model Member {
   importBatches            ImportBatch[]
   sectorsCreated           Sector[]
   clubSettingsUpdated      ClubSetting[]
+  disciplinaryRecords      DisciplinaryRecord[]     @relation("MemberDisciplinaryRecords")
+  disciplinaryIssued       DisciplinaryRecord[]     @relation("DisciplinaryIssuedBy")
+  matchFeeChoices          MemberMatchFeeChoice[]
 
   @@index([status])
+  @@index([membershipClass])
   @@map("members")
 }
 
@@ -154,14 +207,17 @@ enum RoleAssignmentStatus {
 }
 
 model RoleAssignment {
-  id          String               @id @default(uuid())
-  memberId    String               @map("member_id")
-  roleId      String               @map("role_id")
-  sectorId    String?              @map("sector_id")
-  status      RoleAssignmentStatus @default(active)
-  grantedById String               @map("granted_by")
-  grantedAt   DateTime             @default(now()) @map("granted_at")
-  endsAt      DateTime?            @map("ends_at")
+  id            String               @id @default(uuid())
+  memberId      String               @map("member_id")
+  roleId        String               @map("role_id")
+  sectorId      String?              @map("sector_id")
+  status        RoleAssignmentStatus @default(active)
+  grantedById   String               @map("granted_by")
+  grantedAt     DateTime             @default(now()) @map("granted_at")
+  /// §3.4.1 — a Divisional President's one-year term end.
+  endsAt        DateTime?            @map("ends_at")
+  /// §3.3.2 — which half of a Division's co-presidency this is.
+  presidentTier PresidentTier?       @map("president_tier")
 
   member    Member  @relation("MemberRoleAssignments", fields: [memberId], references: [id], onDelete: Cascade)
   role      Role    @relation(fields: [roleId], references: [id])
@@ -226,6 +282,13 @@ model MatchRsvp {
   response    RsvpResponse
   waitlisted  Boolean      @default(false)
   respondedAt DateTime     @default(now()) @map("responded_at")
+
+  /// §5.3.3 — recorded after the match. Null until someone marks the sheet;
+  /// false plus an un-withdrawn YES is what triggers the one-match suspension.
+  attended   Boolean?
+  /// §5.3.4 — Advisory Board exemption for emergency, illness or other cause.
+  excused    Boolean  @default(false)
+  excuseNote String?  @map("excuse_note") @db.VarChar(500)
 
   match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
   member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
@@ -750,4 +813,56 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([actorId])
   @@map("audit_logs")
+}
+
+// ---------------------------------------------------------------------------
+// Rulebook enforcement (Constitution & Official Rulebook v1.0)
+// ---------------------------------------------------------------------------
+
+/// §7.2 — sanctions issued by Division 6 / the Advisory Board, and the
+/// automatic one-match suspensions from §5.3.3. Records are never deleted:
+/// a rescinded sanction keeps its history, mirroring the finance ledger's
+/// void-don't-delete rule.
+model DisciplinaryRecord {
+  id               String             @id @default(uuid())
+  memberId         String             @map("member_id")
+  type             DisciplinaryType
+  reason           String             @db.VarChar(1000)
+  /// Rulebook clause this sanction was issued under, e.g. "5.3.3".
+  clause           String?            @db.VarChar(20)
+  /// For match_suspension: how many matches, and which one it was served at.
+  matchesSuspended Int?               @map("matches_suspended")
+  servedMatchId    String?            @map("served_match_id")
+  /// For fine: amount in BDT.
+  fineAmount       Decimal?           @map("fine_amount") @db.Decimal(10, 2)
+  /// The match that triggered an automatic no-show penalty, if any.
+  sourceMatchId    String?            @map("source_match_id")
+  status           DisciplinaryStatus @default(active)
+  issuedById       String?            @map("issued_by")
+  issuedAt         DateTime           @default(now()) @map("issued_at")
+  rescindedById    String?            @map("rescinded_by")
+  rescindedAt      DateTime?          @map("rescinded_at")
+  rescindReason    String?            @map("rescind_reason") @db.VarChar(500)
+
+  member   Member  @relation("MemberDisciplinaryRecords", fields: [memberId], references: [id], onDelete: Cascade)
+  issuedBy Member? @relation("DisciplinaryIssuedBy", fields: [issuedById], references: [id])
+
+  @@index([memberId, status])
+  @@map("disciplinary_records")
+}
+
+/// §2.2.2 — each member picks Monthly Pass or Pay-Per-Match for a given
+/// calendar month. Absent a choice, the pay-per-match tiers apply, since that
+/// is the option that charges nothing until someone actually plays.
+model MemberMatchFeeChoice {
+  id       String         @id @default(uuid())
+  memberId String         @map("member_id")
+  feeMonth String         @map("fee_month") @db.VarChar(7)
+  option   MatchFeeOption
+  chosenAt DateTime       @default(now()) @map("chosen_at")
+
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, feeMonth])
+  @@map("member_match_fee_choices")
 }
